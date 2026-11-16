@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#111e1b">
+<meta name="description" content="需求工程试讲 · S03 · L07.01 · 招聘助手。全程 25 分钟。">
+<title>验收筛查性能 · 需求工程 S03</title>
+<style>
+  :root {
+    color-scheme: light;
+    --shell: #111e1b;
+    --paper: #f6f4e9;
+    --ink: #182b25;
+    --muted: #4e6259;
+    --line: #cbd4c5;
+    --accent: #266248;
+    --mint: #cceda5;
+    --wash: #e5ebdb;
+    --serif: "Noto Serif CJK SC", "Songti SC", SimSun, serif;
+    --sans: "Inter", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--shell); color: var(--paper); font: 16px var(--sans); }
+  button, input { font: inherit; }
+  button { cursor: pointer; }
+  button:disabled { cursor: default; }
+  :focus-visible { outline: 3px solid #b46627; outline-offset: 4px; }
+  .deck {
+    width: min(calc(100% - 32px), 1450px); min-height: 100dvh;
+    margin-inline: auto; display: flex; flex-direction: column; justify-content: center;
+  }
+  .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; }
+  .course { display: flex; align-items: center; gap: 10px; letter-spacing: .08em; font-size: 13px; font-weight: 700; }
+  .course::before { content: ""; width: 10px; height: 10px; border: 2px solid var(--mint); transform: rotate(45deg); }
+  .tools, .navigation { display: flex; align-items: center; gap: 8px; }
+  .tool, .nav-button {
+    background: transparent; color: var(--paper); border: 1px solid #51635b;
+    border-radius: 7px; padding: 7px 11px; font-size: 13px; min-height: 36px;
+  }
+  .tool:hover, .nav-button:hover:not(:disabled) { background: #2e4439; }
+  .tool[aria-expanded=true] { background: var(--mint); color: var(--shell); }
+  .nav-button { min-width: 42px; font-size: 18px; line-height: 1; }
+  .nav-button:disabled { opacity: .38; }
+  .stage {
+    color: var(--ink); background: var(--paper); border-radius: 11px;
+    container-type: inline-size; position: relative; overflow: hidden;
+  }
+  .slide {
+    --pad: clamp(24px, 5.1cqw, 82px);
+    min-height: min(65dvh, 620px); padding: clamp(25px, 4.3cqw, 67px) var(--pad);
+    display: flex; flex-direction: column; justify-content: center; gap: clamp(12px, 1.55cqw, 24px);
+  }
+  .slide:focus { outline: none; }
+  .slide.dark {
+    background: radial-gradient(ellipse at 88% 12%, #3d5843, transparent 53%), #1a3027;
+    color: var(--paper);
+  }
+  .eyebrow { margin: 0; color: var(--accent); font-size: clamp(12px, 1.25cqw, 18px); font-weight: 800; letter-spacing: .13em; }
+  .dark .eyebrow { color: var(--mint); }
+  h1, h2, h3, p { margin: 0; }
+  h1, h2 { font-family: var(--serif); font-weight: 750; line-height: 1.22; letter-spacing: -.04em; }
+  h1 { font-size: clamp(35px, 5.8cqw, 86px); }
+  h2 { font-size: clamp(29px, 4.05cqw, 62px); }
+  h3 { font-size: clamp(19px, 1.9cqw, 28px); line-height: 1.35; }
+  .lead { color: var(--muted); font-size: clamp(15px, 1.65cqw, 23px); line-height: 1.65; }
+  .dark .lead { color: #dfebd8; }
+  .accent { color: var(--mint); }
+  .small { font-size: clamp(13px, 1.23cqw, 17px); line-height: 1.55; }
+  .body-copy { font-size: clamp(15px, 1.47cqw, 21px); line-height: 1.6; }
+  .cover-grid, .lab-grid { display: grid; align-items: center; grid-template-columns: 1.12fr .88fr; gap: 5cqw; }
+  .cover-copy > .lead { margin-top: 2.1cqw; }
+  .request { border-radius: 11px; background: var(--mint); color: var(--ink); padding: 3.1cqw; min-width: 0; }
+  .request-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 1.4cqw; border-bottom: 1px solid #829d68; gap: 12px; }
+  .request-title { margin-block: 2cqw; font: 750 clamp(26px, 3.1cqw, 48px)/1.28 var(--serif); }
+  .request-question { color: #345742; }
+  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(9px, 1.4cqw, 22px); }
+  .card, .lab-controls, .lab-result {
+    border: 1px solid var(--line); border-radius: 10px; padding: clamp(14px, 1.7cqw, 26px); min-width: 0;
+  }
+  .card { background: #fbfaf3; }
+  .reveal-card { min-height: 11.2cqw; }
+  .reveal {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 7px;
+    color: var(--ink); text-align: left; border: 0; background: transparent; padding: 0;
+    font-size: clamp(18px, 1.95cqw, 28px); font-weight: 800; min-height: 35px;
+  }
+  .reveal::after { content: "+"; color: var(--accent); font-size: 1.15em; }
+  .reveal[aria-expanded=true]::after { content: "−"; }
+  .reveal-card p { margin-top: .75rem; }
+  .reveal-card:has(button[aria-expanded=true]) { border-color: #749580; background: #eaf1e2; }
+  .evidence { display: grid; grid-template-columns: 1.04fr .96fr; gap: 2cqw; }
+  .quote { margin: 0; background: #e8eddf; border-radius: 10px; padding: 2.4cqw; }
+  .quote p { margin-top: .65em; font: 720 clamp(19px, 2.42cqw, 35px)/1.4 var(--serif); }
+  .quote cite { font-style: normal; color: var(--accent); font-weight: 700; }
+  .metric-example {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px;
+    margin-top: .2cqw; padding-top: 1.3cqw; border-top: 1px solid var(--line);
+  }
+  .metric-example strong { font-size: clamp(16px, 1.65cqw, 24px); }
+  .metric-example p { color: var(--muted); }
+  .lab .lead { font-size: clamp(14px, 1.39cqw, 20px); }
+  .lab-grid { grid-template-columns: .86fr 1.14fr; align-items: stretch; gap: 1.6cqw; }
+  .lab-controls { display: grid; gap: .9rem; align-content: center; background: #fbfaf3; }
+  .lab-result { background: #e8efdd; display: grid; align-content: center; gap: .65rem; }
+  fieldset { padding: 0; border: 0; margin: 0; min-width: 0; }
+  legend, .range-label { display: block; font-weight: 700; margin-bottom: 7px; }
+  .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+  .choice { display: grid; place-items: center; position: relative; }
+  .choice input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .choice span { width: 100%; text-align: center; padding: 7px 4px; border: 1px solid var(--line); border-radius: 6px; }
+  .choice input:checked + span { background: #255b44; color: #fff; border-color: #255b44; font-weight: 700; }
+  .choice input:focus-visible + span { outline: 3px solid #b46627; outline-offset: 3px; }
+  .range-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .range-value { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 800; }
+  input[type=range] { margin: 0; accent-color: var(--accent); width: 100%; min-height: 24px; }
+  .numbers { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .percent { font-size: clamp(28px, 3.6cqw, 52px); line-height: 1; font-weight: 800; letter-spacing: -.05em; }
+  .status { border-radius: 4px; padding: 3px 7px; background: #cce9bb; color: #214e37; font-weight: 800; }
+  .status.failed { background: #f2dbcb; color: #733716; }
+  .dots { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 3px; }
+  .dot { border-radius: 2px; height: clamp(8px, 1.15cqw, 17px); background: #a9b7a7; }
+  .dot.passed { background: #347352; }
+  .criterion {
+    border-left: 4px solid var(--accent); padding: .55em .8em; background: #f9f8ee;
+    font-size: clamp(14px, 1.36cqw, 20px); line-height: 1.55;
+  }
+  .case-result { display: inline-block; margin-block: .55em; color: var(--accent); font-weight: 800; }
+  .card .case-result.fail { color: #83401e; }
+  .exercise { max-width: 970px; }
+  .exercise .lead { margin-top: .7em; }
+  .exercise-answer { margin-top: .8rem; padding: .75rem 1rem; color: #eff5e8; background: #2e4439; border-left: 4px solid var(--mint); }
+  .answer-button { background: var(--mint); color: var(--shell); border: 0; border-radius: 6px; min-height: 40px; padding: 8px 14px; font-weight: 800; }
+  .progress { height: 3px; background: #4a5d51; margin: 0 3px; }
+  .progress div { height: 100%; background: var(--mint); transition: width .2s ease; }
+  .slide-count { min-width: 61px; text-align: center; color: #e6eee2; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .hint { font-size: 12px; color: #bfcfc4; }
+  .notes {
+    position: fixed; z-index: 1; right: max(16px, calc((100vw - 1450px) / 2)); bottom: 60px;
+    width: min(440px, calc(100vw - 32px)); background: #fbfaf3; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 9px; box-shadow: 0 10px 40px #0b1614a6; padding: 17px 20px;
+  }
+  .notes h2 { font: 800 15px var(--sans); margin-bottom: 7px; }
+  @media (min-width: 830px) and (min-height: 590px) {
+    .deck { width: min(calc(100% - 48px), calc((100dvh - 110px) * 16 / 9), 1450px); }
+    .stage { aspect-ratio: 16 / 9; }
+    .slide { min-height: 100%; }
+  }
+  @media (max-width: 680px) {
+    .deck { width: calc(100% - 20px); justify-content: flex-start; }
+    .stage { flex: 1; display: flex; align-items: stretch; }
+    .slide { width: 100%; min-height: calc(100dvh - 108px); justify-content: flex-start; }
+    .cover-grid, .lab-grid, .evidence, .cards { grid-template-columns: 1fr; }
+    .cover-grid { gap: 24px; }
+    .request, .quote { padding: 17px; }
+    .request-head { padding-bottom: 10px; }
+    .request-title { margin-block: 16px; }
+    .reveal-card { min-height: auto; }
+    .metric-example { padding-top: 10px; }
+    .lab-controls { gap: .6rem; }
+    .hint { display: none; }
+    .deck > footer { position: sticky; bottom: 0; background: var(--shell); z-index: 1; box-shadow: 0 -1px #526359; }
+    .notes { z-index: 2; }
+  }
+  @media (prefers-reduced-motion: reduce) { .progress div { transition: none; } }
+  :root { --warn: #783918; --warn-wash: #f3e2d3; }
+  .toolbar { flex-wrap: wrap; }
+  .toolbar .hint { margin-right: auto; }
+  .course { white-space: nowrap; }
+  .course::before { flex: 0 0 auto; }
+  .cover-copy { min-width: 0; }
+  .cover-copy .lead { max-width: 31em; }
+  .cover-grid { grid-template-columns: 1.02fr .98fr; gap: 3.8cqw; }
+  .request-title.long { font-size: clamp(20px, 2.44cqw, 36px); }
+  .dark .question { color: var(--mint); }
+  .question { font-weight: 750; }
+  .panel {
+    border: 1px solid var(--line); border-radius: 10px; background: #fbfaf3;
+    padding: clamp(14px, 1.65cqw, 25px); min-width: 0;
+  }
+  .panel.soft { background: var(--wash); }
+  .panel > * + * { margin-top: .45em; }
+  .cards.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cards.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .cards .body-copy { margin-top: .35em; }
+  .list { margin: 0; padding-left: 1.5em; }
+  .list li + li { margin-top: .4em; }
+  .caption { color: var(--muted); }
+  .dark .caption { color: #dfebd8; }
+  .stack { display: grid; gap: .65rem; }
+  .callout { padding: clamp(10px, 1.2cqw, 17px) clamp(13px, 1.75cqw, 26px); border-left: 4px solid var(--accent); background: var(--wash); }
+  .callout strong { color: var(--accent); }
+  .dark .callout { border-color: var(--mint); background: #294237; }
+  .dark .callout strong { color: var(--mint); }
+  .answer-box {
+    background: #e8efdd; color: var(--ink); border-left: 4px solid var(--accent);
+    padding: clamp(12px, 1.5cqw, 22px); margin-top: .65rem;
+  }
+  .dark .answer-box { color: var(--paper); background: #2e4439; border-color: var(--mint); }
+  .answer-button { border: 1px solid #91af72; min-height: 42px; }
+  .answer-button:hover { background: #badd95; }
+  .feedback .answer-box > * + * { margin-top: .45em; }
+  .matrix { border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  table { width: 100%; border-spacing: 0; text-align: left; color: var(--ink); background: #fbfaf3; }
+  caption { text-align: left; padding: .45em .8em; color: var(--accent); font-weight: 800; background: var(--wash); }
+  th, td { padding: .35em .8em; vertical-align: top; border-top: 1px solid var(--line); }
+  thead th { background: #ecefe2; }
+  tbody th { font-weight: 650; white-space: nowrap; }
+  td.empty { color: var(--warn); }
+  .dark .matrix { border-color: #a8b59a; }
+  .balance { font: 800 clamp(25px, 3.6cqw, 48px)/1.1 var(--sans); color: var(--accent); font-variant-numeric: tabular-nums; }
+  .docket .panel { display: grid; gap: .4em; }
+  .docket .panel > * { margin: 0; }
+  .docket .panel:last-child, .docket .panel:nth-child(3) { background: #f6ecde; }
+  .meter { height: 13px; border-radius: 8px; overflow: hidden; }
+  .meter > span { min-width: 0; height: 100%; display: block; background: var(--accent); }
+  .meter > span.late { background: #93ae7d; }
+  .meter > span.error { background: #ac6d4e; }
+  .meter > span.pending { background: #e2b05a; }
+  .timeline {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-size: clamp(15px, 1.45cqw, 21px);
+  }
+  .timeline > span:not(.arrow) { background: var(--wash); border-radius: 6px; padding: .45em .65em; }
+  .timeline > span.target { background: var(--mint); font-weight: 800; }
+  .timeline .arrow { color: var(--accent); }
+  .estimate { padding-top: .55rem; border-top: 1px solid var(--line); }
+  .phase { color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 800; }
+  .notes { overflow: auto; max-height: calc(100dvh - 120px); }
+  .notes .note-timing { color: var(--accent); font-weight: 800; margin-bottom: .35em; }
+  .notes h2 { margin-bottom: .3em; }
+  .startup { margin: 1rem 0; color: var(--paper); }
+  @media (min-width: 830px) and (min-height: 590px) {
+    .slide { height: 100%; overflow: auto; justify-content: safe center; }
+    .stage { flex: 0 0 auto; }
+    .slide.compact { --pad: clamp(22px, 4.4cqw, 69px); padding-block: clamp(18px, 2.9cqw, 45px); gap: clamp(9px, 1.2cqw, 17px); }
+  }
+  @media (max-width: 825px) {
+    .cards.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 680px) {
+    .toolbar { gap: 7px; }
+    .tool, .nav-button { min-height: 42px; }
+    .slide { --pad: clamp(16px, 5cqw, 30px); }
+    .cards.two { grid-template-columns: 1fr; }
+    .cover-grid { grid-template-columns: 1fr; gap: 20px; }
+    .cover-copy h1 br { display: none; }
+    th, td, caption { padding-inline: .55em; }
+    .hint { display: none; }
+  }
+  @media (max-width: 355px) {
+    .cards.four, .choices { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main class="deck">
+  <header class="toolbar">
+    <span class="course">需求工程课</span>
+    <div class="tools">
+      <button type="button" id="notes-toggle" class="tool" aria-controls="speaker-notes" aria-expanded="false">讲者备注</button>
+      <button type="button" id="fullscreen" class="tool">全屏</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="slide dark cover" tabindex="-1" aria-labelledby="slide-title-1"
+      data-time="00:00–03:00" data-notes="读完原话留 45 秒。请两人报各自的起点和终点。追问 HR 在看到第一份评分时能否开始整批复核。强调两秒只是开场诉求。">
+      <p class="eyebrow">S03 · 招聘助手</p>
+      <div class="cover-grid"><div class="cover-copy"><h1 id="slide-title-1">把「要快」写成<br><span class='accent'>可验收的要求</span></h1><p class="lead">提交、任务受理、首份结果和整批就绪，分别是四个时点。</p></div>
+<div class="request">
+  <div class="request-head small"><strong>业务原话</strong><span>课堂模拟</span></div>
+  <p class="request-title">「简历打分要快，最好两秒。」</p>
+  <p class="request-question body-copy">你会在哪一刻按下计时器，又在哪一刻停表？</p>
+</div></div>
+    </section>
+
+    <section class="slide compact" tabindex="-1" aria-labelledby="slide-title-2"
+      data-time="03:00–06:00" data-notes="发 R-Q01，先盖住台账。请学员指出终点是整批可供复核，读对象、负载、环境和起止。追问谁能说明业务容许等待多久。" hidden>
+      <p class="eyebrow">性能候选 · R-Q01</p>
+      <h2 id="slide-title-2">从哪儿计时，测多少批？</h2>
+      <div class="timeline"><span>任务受理</span><span class="arrow" aria-hidden="true">→</span><span class="target">整批评分和理由可打开</span></div><div class="cards "><article class="panel"><h3>测试对象</h3><p class="body-copy">获授权、可读且格式符合要求的模拟简历。每批最多 20 份。</p></article>
+<article class="panel"><h3>负载和样本</h3><p class="body-copy">按同时 10 批的负载，记录 100 批有效且已受理的任务。</p></article>
+<article class="panel"><h3>目标和观察</h3><p class="body-copy">至少 95% 在 30 秒内可打开完整结果。观察到 60 秒。</p></article></div><p class="small caption">课堂候选。测试环境、简历体积、并发安排及可接受目标待协商。</p>
+    </section>
+
+    <section class="slide compact" tabindex="-1" aria-labelledby="slide-title-3"
+      data-time="06:00–08:00" data-notes="发模拟台账。给 60 秒独立计算，先请两人读出分子和分母。此页不展示答案。失败与未完成各属于独立的观察结果。" hidden>
+      <p class="eyebrow">结果台账 · R-Q01</p>
+      <h2 id="slide-title-3">四组任务，哪些该进分母？</h2>
+      <div class="cards four docket"><div class="panel"><strong class="balance">94</strong><p class="body-copy">30 秒内完整结果可打开</p></div>
+<div class="panel"><strong class="balance">3</strong><p class="body-copy">超过 30 秒且在 60 秒内完整可打开</p></div>
+<div class="panel"><strong class="balance">2</strong><p class="body-copy">受理后失败</p></div>
+<div class="panel"><strong class="balance">1</strong><p class="body-copy">到 60 秒仍未完成</p></div></div><p class="lead">先算全部有效且已受理任务的比例，再算只看 60 秒内完成任务时的比例。</p>
+    </section>
+
+    <section class="slide compact" tabindex="-1" aria-labelledby="slide-title-4"
+      data-time="08:00–10:00" data-notes="默认是 94/100＝94%，对照 95% 候选不达标。切换得 94/97≈96.9%，显示它超过比例目标，但 R-Q01 仍不达标。用滑块移到 94% 和 97%，让学员预测边界。改的是课堂推演，原候选目标不变。" hidden>
+      <p class="eyebrow">现场推演</p>
+      <h2 id="slide-title-4">同一份台账，两种比例</h2>
+      <p class="small caption">固定 30 秒时限。可切换分母或临时调整比例目标，观察判断如何变化。</p><div class="feedback"><button type="button" class="answer-button" aria-expanded="false" aria-controls="performance" data-closed="揭示比例与达标判断" data-open="收起">揭示比例与达标判断</button><div id="performance" class="answer-box" hidden>
+    <div class="lab-grid">
+      <div class="lab-controls">
+        <fieldset>
+          <legend class="small">分母</legend>
+          <div class="choices">
+            <label class="choice"><input type="radio" name="scope" value="eligible" checked><span>全部受理任务</span></label>
+            <label class="choice"><input type="radio" name="scope" value="complete"><span>只看完成任务</span></label>
+          </div>
+        </fieldset>
+        <div>
+          <div class="range-row small"><label for="threshold" class="range-label">推演达标目标</label><output class="range-value" for="threshold" id="threshold-value">95%</output></div>
+          <input type="range" id="threshold" min="90" max="100" step="1" value="95">
+        </div>
+      </div>
+      <div class="lab-result" role="status" aria-live="polite" aria-atomic="true">
+        <div class="numbers"><strong class="percent" id="lab-percent"></strong><strong class="status small" id="lab-status"></strong></div>
+        <p id="lab-count" class="body-copy"></p>
+        <p id="lab-rule" class="small"></p>
+      </div>
+    </div></div></div>
+    </section>
+
+    <section class="slide " tabindex="-1" aria-labelledby="slide-title-5"
+      data-time="10:00–13:00" data-notes="请学员指出超出的是哪一项条件。可以用「到点看不到任务状态」讨论可见性和重试，但不要把新条件当成已同意的要求。" hidden>
+      <p class="eyebrow">边界核对</p>
+      <h2 id="slide-title-5">提交 50 份简历，怎么处理？</h2>
+      <div class="cards two"><article class="panel"><h3>规模超出</h3><p class="body-copy">每批最多 20 份是这条测试的规模。超过时要约定是否接受，以及用户会看到什么。</p></article>
+<article class="panel"><h3>观察截止</h3><p class="body-copy">60 秒时仍无完整结果，就记最后状态。完成时间等实际发生再填。</p></article></div><p class="lead">再追问一句：系统「稳」应该避免哪一种卡住复核的情况？</p>
+    </section>
+
+    <section class="slide " tabindex="-1" aria-labelledby="slide-title-6"
+      data-time="13:00–20:00" data-notes="使用 A07 空白作答区。两人分别扮演业务与测试，只查失败的归属和可观察终点。提醒学员注明观察截止、环境及待协商条件。" hidden>
+      <p class="eyebrow">独立作答 · A07</p>
+      <h2 id="slide-title-6">写一条别人能复现的质量要求</h2>
+      <div class="cards "><article class="panel"><h3>写条件</h3><p class="body-copy">输入、规模、负载、起止、分子分母、样本和观察截止。</p></article>
+<article class="panel"><h3>互查两问</h3><p class="body-copy">任务失败怎么算？终点是首条出现还是整批可用？</p></article>
+<article class="panel"><h3>留待协商</h3><p class="body-copy">列一项环境或目标条件，写明找谁确认。</p></article></div><p class="estimate small"><span class="phase">1 分钟</span> 交代　<span class="phase">3 分钟</span> 独立写　<span class="phase">2 分钟</span> 互查　<span class="phase">1 分钟</span> 修订</p>
+    </section>
+
+    <section class="slide " tabindex="-1" aria-labelledby="slide-title-7"
+      data-time="20:00–23:00" data-notes="先请一人举系统更快但人工仍费时的例子。随后给讲评参考。区分等待时间和实际操作用时，联系推荐理由的可核查性。" hidden>
+      <p class="eyebrow">讲评 · A07</p>
+      <h2 id="slide-title-7">出分很快，HR 还要翻回去吗？</h2>
+      <p class="lead">如果推荐理由只写了「匹配度高」，你准备怎样证明它让复核更省力？</p><div class="feedback"><button type="button" class="answer-button" aria-expanded="false" aria-controls="feedback" data-closed="展开讲评参考" data-open="收起">展开讲评参考</button><div id="feedback" class="answer-box" hidden><ul class="list body-copy"><li>系统性能：94/100 = 94%，低于 R-Q01 候选目标 95%。</li><li>业务效果：在同一版 JD 和难度相近的样本下，对照人工与辅助初筛的操作用时。</li><li>一起检查待核对项，以及推荐理由漏证、错引的情况。</li></ul></div></div>
+    </section>
+
+    <section class="slide dark" tabindex="-1" aria-labelledby="slide-title-8"
+      data-time="23:00–25:00" data-notes="最后一分钟收一项业务结果和采集方法，记录常见混淆。预告下节追查简历、JD 和岗位权限各自从哪里来。" hidden>
+      <p class="eyebrow">离场检查</p>
+      <h2 id="slide-title-8">下次要观察哪项业务结果？</h2>
+      <div class="exercise body-copy"><ol class="list"><li>你想知道 HR 哪一步有没有变好？</li><li>准备怎样采集证据来比较？</li></ol></div>
+    </section>
+  </div>
+
+  <div class="progress" aria-hidden="true"><div id="progress-fill"></div></div>
+  <footer class="toolbar">
+    <span class="hint">方向键翻页 · N 切换讲者备注</span>
+    <div class="navigation">
+      <button type="button" class="nav-button" id="previous" aria-label="上一页" disabled>←</button>
+      <span class="slide-count" id="page-count" role="status" aria-live="polite">1 / 8</span>
+      <button type="button" class="nav-button" id="next" aria-label="下一页">→</button>
+    </div>
+  </footer>
+  <aside class="notes" id="speaker-notes" aria-labelledby="notes-heading" hidden>
+    <h2 id="notes-heading">讲者备注</h2>
+    <p id="notes-time" class="note-timing small"></p>
+    <p id="notes-text" class="small"></p>
+  </aside>
+  <noscript><p class="startup">请在支持 JavaScript 的浏览器中启用脚本，以使用翻页和课堂互动。</p></noscript>
+</main>
+<script>
+  const slides = [...document.querySelectorAll(".slide")];
+  const previous = document.getElementById("previous");
+  const next = document.getElementById("next");
+  const pageCount = document.getElementById("page-count");
+  const progress = document.getElementById("progress-fill");
+  const notesToggle = document.getElementById("notes-toggle");
+  const notesPanel = document.getElementById("speaker-notes");
+  const notesTime = document.getElementById("notes-time");
+  const notesText = document.getElementById("notes-text");
+  const fullscreen = document.getElementById("fullscreen");
+  let currentSlide = 0;
+
+  function showSlide(target, moveFocus = false) {
+    const index = Math.max(0, Math.min(target, slides.length - 1));
+    if (moveFocus && index === currentSlide) return;
+    slides[currentSlide].hidden = true;
+    currentSlide = index;
+    const slide = slides[index];
+    slide.hidden = false;
+    previous.disabled = index === 0;
+    next.disabled = index === slides.length - 1;
+    pageCount.textContent = (index + 1) + " / " + slides.length;
+    progress.style.width = ((index + 1) / slides.length * 100) + "%";
+    notesTime.textContent = slide.dataset.time;
+    notesText.textContent = slide.dataset.notes;
+    notesPanel.scrollTop = 0;
+    if (moveFocus) {
+      slide.scrollTop = 0;
+      slide.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+    }
+  }
+
+  function togglePanel(button) {
+    const panel = document.getElementById(button.getAttribute("aria-controls"));
+    panel.hidden = !panel.hidden;
+    button.setAttribute("aria-expanded", String(!panel.hidden));
+    if (button.dataset.closed) {
+      button.textContent = panel.hidden ? button.dataset.closed : button.dataset.open;
+    }
+    return panel.hidden;
+  }
+
+  previous.addEventListener("click", () => showSlide(currentSlide - 1, true));
+  next.addEventListener("click", () => showSlide(currentSlide + 1, true));
+  notesToggle.addEventListener("click", () => togglePanel(notesToggle));
+  document.querySelectorAll(".reveal, .answer-button").forEach(button => {
+    button.addEventListener("click", () => togglePanel(button));
+  });
+
+  fullscreen.hidden = !document.fullscreenEnabled;
+  fullscreen.addEventListener("click", async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch {
+      fullscreen.textContent = "全屏不可用";
+    }
+  });
+  document.addEventListener("fullscreenchange", () => {
+    fullscreen.textContent = document.fullscreenElement ? "退出全屏" : "全屏";
+  });
+
+  const directions = { ArrowRight: 1, PageDown: 1, ArrowLeft: -1, PageUp: -1 };
+  document.addEventListener("keydown", event => {
+    if (event.altKey || event.metaKey || event.ctrlKey || event.isComposing) return;
+    if (event.key === "Escape" && !notesPanel.hidden) {
+      togglePanel(notesToggle);
+      if (notesPanel.contains(document.activeElement)) notesToggle.focus();
+      return;
+    }
+    if (event.target.closest("input, select, textarea, [contenteditable]")) return;
+    if (event.key.toLowerCase() === "n" && !event.repeat) {
+      togglePanel(notesToggle);
+      return;
+    }
+    if (Object.hasOwn(directions, event.key)) {
+      event.preventDefault();
+      showSlide(currentSlide + directions[event.key], true);
+    }
+  });
+
+  showSlide(0);
+  const outcomeCounts = [94, 3, 2, 1];
+  const [onTime, late, failed, pending] = outcomeCounts;
+  const threshold = document.getElementById("threshold");
+  const thresholdValue = document.getElementById("threshold-value");
+  const percent = document.getElementById("lab-percent");
+  const status = document.getElementById("lab-status");
+  const count = document.getElementById("lab-count");
+  const rule = document.getElementById("lab-rule");
+
+  function updateThreshold() {
+    const completedOnly = document.querySelector("input[name=scope]:checked").value === "complete";
+    const total = onTime + late + (completedOnly ? 0 : failed + pending);
+    const target = threshold.valueAsNumber;
+    const meetsTarget = onTime * 100 >= target * total;
+    const share = onTime * 100 / total;
+    thresholdValue.value = target + "%";
+    threshold.setAttribute("aria-valuetext", target + "%");
+    percent.textContent = share.toFixed(completedOnly ? 1 : 0) + "%";
+    status.textContent = completedOnly
+      ? (meetsTarget ? "高于或等于推演目标" : "低于推演目标")
+      : (meetsTarget ? "达到推演目标" : "未达到推演目标");
+    status.classList.toggle("failed", !meetsTarget);
+    count.textContent = onTime + " / " + total + " 批在 30 秒内可用";
+    rule.textContent = completedOnly
+      ? "此口径只描述完成任务。R-Q01 验收用全部有效且已受理任务。"
+      : "分母包含受理后失败和 60 秒仍未完成的任务。";
+  }
+
+  document.querySelectorAll("input[name=scope]").forEach(radio => {
+    radio.addEventListener("change", updateThreshold);
+  });
+  threshold.addEventListener("input", updateThreshold);
+  updateThreshold();
+</script>
+</body>
+</html>
