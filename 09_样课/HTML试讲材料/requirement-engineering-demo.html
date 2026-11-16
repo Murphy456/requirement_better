@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#111e1b">
+<title>把「更快」写成可验收的需求 · 需求工程课</title>
+<style>
+  :root {
+    color-scheme: light;
+    --shell: #111e1b;
+    --paper: #f6f4e9;
+    --ink: #182b25;
+    --muted: #4e6259;
+    --line: #cbd4c5;
+    --accent: #266248;
+    --mint: #cceda5;
+    --wash: #e5ebdb;
+    --serif: "Noto Serif CJK SC", "Songti SC", SimSun, serif;
+    --sans: "Inter", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--shell); color: var(--paper); font: 16px var(--sans); }
+  button, input { font: inherit; }
+  button { cursor: pointer; }
+  button:disabled { cursor: default; }
+  :focus-visible { outline: 3px solid #b46627; outline-offset: 4px; }
+  .deck {
+    width: min(calc(100% - 32px), 1450px); min-height: 100dvh;
+    margin-inline: auto; display: flex; flex-direction: column; justify-content: center;
+  }
+  .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; }
+  .course { display: flex; align-items: center; gap: 10px; letter-spacing: .08em; font-size: 13px; font-weight: 700; }
+  .course::before { content: ""; width: 10px; height: 10px; border: 2px solid var(--mint); transform: rotate(45deg); }
+  .tools, .navigation { display: flex; align-items: center; gap: 8px; }
+  .tool, .nav-button {
+    background: transparent; color: var(--paper); border: 1px solid #51635b;
+    border-radius: 7px; padding: 7px 11px; font-size: 13px; min-height: 36px;
+  }
+  .tool:hover, .nav-button:hover:not(:disabled) { background: #2e4439; }
+  .tool[aria-expanded=true] { background: var(--mint); color: var(--shell); }
+  .nav-button { min-width: 42px; font-size: 18px; line-height: 1; }
+  .nav-button:disabled { opacity: .38; }
+  .stage {
+    color: var(--ink); background: var(--paper); border-radius: 11px;
+    container-type: inline-size; position: relative; overflow: hidden;
+  }
+  .slide {
+    --pad: clamp(24px, 5.1cqw, 82px);
+    min-height: min(65dvh, 620px); padding: clamp(25px, 4.3cqw, 67px) var(--pad);
+    display: flex; flex-direction: column; justify-content: center; gap: clamp(12px, 1.55cqw, 24px);
+  }
+  .slide:focus { outline: none; }
+  .slide.dark {
+    background: radial-gradient(ellipse at 88% 12%, #3d5843, transparent 53%), #1a3027;
+    color: var(--paper);
+  }
+  .eyebrow { margin: 0; color: var(--accent); font-size: clamp(12px, 1.25cqw, 18px); font-weight: 800; letter-spacing: .13em; }
+  .dark .eyebrow { color: var(--mint); }
+  h1, h2, h3, p { margin: 0; }
+  h1, h2 { font-family: var(--serif); font-weight: 750; line-height: 1.22; letter-spacing: -.04em; }
+  h1 { font-size: clamp(35px, 5.8cqw, 86px); }
+  h2 { font-size: clamp(29px, 4.05cqw, 62px); }
+  h3 { font-size: clamp(19px, 1.9cqw, 28px); line-height: 1.35; }
+  .lead { color: var(--muted); font-size: clamp(15px, 1.65cqw, 23px); line-height: 1.65; }
+  .dark .lead { color: #dfebd8; }
+  .accent { color: var(--mint); }
+  .small { font-size: clamp(13px, 1.23cqw, 17px); line-height: 1.55; }
+  .body-copy { font-size: clamp(15px, 1.47cqw, 21px); line-height: 1.6; }
+  .cover-grid, .lab-grid { display: grid; align-items: center; grid-template-columns: 1.12fr .88fr; gap: 5cqw; }
+  .cover-copy > .lead { margin-top: 2.1cqw; }
+  .request { border-radius: 11px; background: var(--mint); color: var(--ink); padding: 3.1cqw; min-width: 0; }
+  .request-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 1.4cqw; border-bottom: 1px solid #829d68; gap: 12px; }
+  .request-title { margin-block: 2cqw; font: 750 clamp(26px, 3.1cqw, 48px)/1.28 var(--serif); }
+  .request-question { color: #345742; }
+  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(9px, 1.4cqw, 22px); }
+  .card, .lab-controls, .lab-result {
+    border: 1px solid var(--line); border-radius: 10px; padding: clamp(14px, 1.7cqw, 26px); min-width: 0;
+  }
+  .card { background: #fbfaf3; }
+  .reveal-card { min-height: 11.2cqw; }
+  .reveal {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 7px;
+    color: var(--ink); text-align: left; border: 0; background: transparent; padding: 0;
+    font-size: clamp(18px, 1.95cqw, 28px); font-weight: 800; min-height: 35px;
+  }
+  .reveal::after { content: "+"; color: var(--accent); font-size: 1.15em; }
+  .reveal[aria-expanded=true]::after { content: "−"; }
+  .reveal-card p { margin-top: .75rem; }
+  .reveal-card:has(button[aria-expanded=true]) { border-color: #749580; background: #eaf1e2; }
+  .evidence { display: grid; grid-template-columns: 1.04fr .96fr; gap: 2cqw; }
+  .quote { margin: 0; background: #e8eddf; border-radius: 10px; padding: 2.4cqw; }
+  .quote p { margin-top: .65em; font: 720 clamp(19px, 2.42cqw, 35px)/1.4 var(--serif); }
+  .quote cite { font-style: normal; color: var(--accent); font-weight: 700; }
+  .metric-example {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px;
+    margin-top: .2cqw; padding-top: 1.3cqw; border-top: 1px solid var(--line);
+  }
+  .metric-example strong { font-size: clamp(16px, 1.65cqw, 24px); }
+  .metric-example p { color: var(--muted); }
+  .lab .lead { font-size: clamp(14px, 1.39cqw, 20px); }
+  .lab-grid { grid-template-columns: .86fr 1.14fr; align-items: stretch; gap: 1.6cqw; }
+  .lab-controls { display: grid; gap: .9rem; align-content: center; background: #fbfaf3; }
+  .lab-result { background: #e8efdd; display: grid; align-content: center; gap: .65rem; }
+  fieldset { padding: 0; border: 0; margin: 0; min-width: 0; }
+  legend, .range-label { display: block; font-weight: 700; margin-bottom: 7px; }
+  .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+  .choice { display: grid; place-items: center; position: relative; }
+  .choice input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .choice span { width: 100%; text-align: center; padding: 7px 4px; border: 1px solid var(--line); border-radius: 6px; }
+  .choice input:checked + span { background: #255b44; color: #fff; border-color: #255b44; font-weight: 700; }
+  .choice input:focus-visible + span { outline: 3px solid #b46627; outline-offset: 3px; }
+  .range-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .range-value { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 800; }
+  input[type=range] { margin: 0; accent-color: var(--accent); width: 100%; min-height: 24px; }
+  .numbers { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .percent { font-size: clamp(28px, 3.6cqw, 52px); line-height: 1; font-weight: 800; letter-spacing: -.05em; }
+  .status { border-radius: 4px; padding: 3px 7px; background: #cce9bb; color: #214e37; font-weight: 800; }
+  .status.failed { background: #f2dbcb; color: #733716; }
+  .dots { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 3px; }
+  .dot { border-radius: 2px; height: clamp(8px, 1.15cqw, 17px); background: #a9b7a7; }
+  .dot.passed { background: #347352; }
+  .criterion {
+    border-left: 4px solid var(--accent); padding: .55em .8em; background: #f9f8ee;
+    font-size: clamp(14px, 1.36cqw, 20px); line-height: 1.55;
+  }
+  .case-result { display: inline-block; margin-block: .55em; color: var(--accent); font-weight: 800; }
+  .card .case-result.fail { color: #83401e; }
+  .exercise { max-width: 970px; }
+  .exercise .lead { margin-top: .7em; }
+  .exercise-answer { margin-top: .8rem; padding: .75rem 1rem; color: #eff5e8; background: #2e4439; border-left: 4px solid var(--mint); }
+  .answer-button { background: var(--mint); color: var(--shell); border: 0; border-radius: 6px; min-height: 40px; padding: 8px 14px; font-weight: 800; }
+  .progress { height: 3px; background: #4a5d51; margin: 0 3px; }
+  .progress div { height: 100%; background: var(--mint); transition: width .2s ease; }
+  .slide-count { min-width: 61px; text-align: center; color: #e6eee2; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .hint { font-size: 12px; color: #bfcfc4; }
+  .notes {
+    position: fixed; z-index: 1; right: max(16px, calc((100vw - 1450px) / 2)); bottom: 60px;
+    width: min(440px, calc(100vw - 32px)); background: #fbfaf3; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 9px; box-shadow: 0 10px 40px #0b1614a6; padding: 17px 20px;
+  }
+  .notes h2 { font: 800 15px var(--sans); margin-bottom: 7px; }
+  @media (min-width: 830px) and (min-height: 590px) {
+    .deck { width: min(calc(100% - 48px), calc((100dvh - 110px) * 16 / 9), 1450px); }
+    .stage { aspect-ratio: 16 / 9; }
+    .slide { min-height: 100%; }
+  }
+  @media (max-width: 680px) {
+    .deck { width: calc(100% - 20px); justify-content: flex-start; }
+    .stage { flex: 1; display: flex; align-items: stretch; }
+    .slide { width: 100%; min-height: calc(100dvh - 108px); justify-content: flex-start; }
+    .cover-grid, .lab-grid, .evidence, .cards { grid-template-columns: 1fr; }
+    .cover-grid { gap: 24px; }
+    .request, .quote { padding: 17px; }
+    .request-head { padding-bottom: 10px; }
+    .request-title { margin-block: 16px; }
+    .reveal-card { min-height: auto; }
+    .metric-example { padding-top: 10px; }
+    .lab-controls { gap: .6rem; }
+    .hint { display: none; }
+    .deck > footer { position: sticky; bottom: 0; background: var(--shell); z-index: 1; box-shadow: 0 -1px #526359; }
+    .notes { z-index: 2; }
+  }
+  @media (prefers-reduced-motion: reduce) { .progress div { transition: none; } }
+</style>
+</head>
+<body>
+<main class="deck">
+  <header class="toolbar">
+    <span class="course">需求工程课</span>
+    <div class="tools">
+      <button type="button" id="notes-toggle" class="tool" aria-controls="speaker-notes" aria-expanded="false">讲者备注</button>
+      <button type="button" id="fullscreen" class="tool">全屏</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="slide dark" aria-labelledby="slide-title-1" tabindex="-1">
+      <p class="eyebrow">需求分析 · 案例演练</p>
+      <div class="cover-grid">
+        <div class="cover-copy">
+          <h1 id="slide-title-1">把「更快」写成<br><span class="accent">可验收的需求</span></h1>
+          <p class="lead">拿到一句模糊的业务诉求，你会先问什么？</p>
+        </div>
+        <div class="request">
+          <div class="request-head small"><strong>业务原话</strong><span>案例 · 审批流程</span></div>
+          <p class="request-title">「希望审批更快。」</p>
+          <p class="request-question body-copy">一周后，业务说还是慢。<br>你准备拿什么数据来核对？</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" aria-labelledby="slide-title-2" tabindex="-1" hidden>
+      <p class="eyebrow">追问</p>
+      <h2 id="slide-title-2">接到「希望审批更快」，<br>你会先问什么？</h2>
+      <p class="lead">先说出自己的问题，再点开卡片对照。</p>
+      <div class="cards">
+        <article class="card reveal-card">
+          <h3><button type="button" class="reveal" aria-expanded="false" aria-controls="who">哪些申请？</button></h3>
+          <p class="body-copy" id="who" hidden>普通申请和加急申请的时限一样吗？业务最想先改善哪一类？</p>
+        </article>
+        <article class="card reveal-card">
+          <h3><button type="button" class="reveal" aria-expanded="false" aria-controls="when">从哪儿计时？</button></h3>
+          <p class="body-copy" id="when" hidden>提交时开始，还是受理时开始？下班后的等待时间要算进去吗？</p>
+        </article>
+        <article class="card reveal-card">
+          <h3><button type="button" class="reveal" aria-expanded="false" aria-controls="how">多快才算达标？</button></h3>
+          <p class="body-copy" id="how" hidden>业务能接受几个工作小时？每 10 笔里，至少要有几笔在时限内完成？</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide" aria-labelledby="slide-title-3" tabindex="-1" hidden>
+      <p class="eyebrow">访谈线索</p>
+      <h2 id="slide-title-3">同一个「快」，<br>普通和加急有两套时限</h2>
+      <div class="evidence">
+        <blockquote class="quote">
+          <cite class="small">业务负责人 · 模拟访谈</cite>
+          <p>「普通申请 4 个工作小时内办完就可以。加急的希望控制在 2 小时。」</p>
+        </blockquote>
+        <blockquote class="quote">
+          <cite class="small">流程负责人 · 模拟访谈</cite>
+          <p>「从提交到审批完成，只累计工作时段。试运行先约定 90% 达标。」</p>
+        </blockquote>
+      </div>
+      <div class="metric-example">
+        <strong>先定工作时间</strong>
+        <p class="body-copy">示例约定工作日 9:00–17:00。周一 16:00 提交、周二 10:00 完成，耗时 2 个工作小时。</p>
+      </div>
+    </section>
+
+    <section class="slide lab" aria-labelledby="slide-title-4" tabindex="-1" hidden>
+      <p class="eyebrow">现场演示</p>
+      <h2 id="slide-title-4">换一个时限，结果会变吗？</h2>
+      <p class="lead">试运行 30 日内办结的申请按类型统计。两类各有 20 笔模拟记录。</p>
+      <div class="lab-grid">
+        <div class="lab-controls">
+          <fieldset>
+            <legend class="small">申请类型</legend>
+            <div class="choices small">
+              <label class="choice"><input type="radio" name="cohort" value="standard" checked><span>普通申请</span></label>
+              <label class="choice"><input type="radio" name="cohort" value="urgent"><span>加急申请</span></label>
+            </div>
+          </fieldset>
+          <div>
+            <div class="range-row small">
+              <label for="threshold" class="range-label">验收时限</label>
+              <output for="threshold" id="threshold-value" class="range-value">4 工作小时</output>
+            </div>
+            <input type="range" id="threshold" min="1" max="8" step="0.5" value="4" aria-valuetext="4 个工作小时">
+          </div>
+        </div>
+        <div class="lab-result">
+          <div class="numbers" role="status" aria-live="polite" aria-atomic="true">
+            <strong class="percent" id="percent">90%</strong>
+            <span class="status small" id="status">通过</span>
+            <span class="small" id="count">18 / 20 笔在时限内</span>
+          </div>
+          <div class="dots" id="dots" aria-hidden="true"></div>
+          <p class="small">每格代表一笔申请，深绿色表示在时限内办结。</p>
+        </div>
+      </div>
+      <p id="criterion" class="criterion">试运行 30 日内办结的普通申请中，至少 90% 从提交到审批完成的耗时不超过 4 个工作小时。</p>
+    </section>
+
+    <section class="slide" aria-labelledby="slide-title-5" tabindex="-1" hidden>
+      <p class="eyebrow">验收核对</p>
+      <h2 id="slide-title-5">正好 4 个工作小时，算达标吗？</h2>
+      <p class="lead">以普通申请的原定条件为例。时限为 4 个工作小时，达标比例至少 90%。</p>
+      <div class="cards">
+        <article class="card">
+          <h3>正好 4 小时</h3>
+          <p class="case-result small">这笔达标</p>
+          <p class="body-copy">「不超过」包含等于。正好到时限的记录计入达标笔数。</p>
+        </article>
+        <article class="card">
+          <h3>4 小时 1 分钟</h3>
+          <p class="case-result fail small">这笔超时</p>
+          <p class="body-copy">按原始时间差比较。报表把耗时显示成「4.0」也照样计为超时。</p>
+        </article>
+        <article class="card">
+          <h3>试运行结束时未办结</h3>
+          <p class="case-result small">另列积压</p>
+          <p class="body-copy">单列未办结笔数和已超时笔数，交给业务负责人核对。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide dark" aria-labelledby="slide-title-6" tabindex="-1" hidden>
+      <p class="eyebrow">迁移练习</p>
+      <div class="exercise">
+        <h2 id="slide-title-6">「希望报表更及时。」<br><span class="accent">你会怎么写验收条件？</span></h2>
+        <p class="lead">先定报表范围、截止时间和达标比例，再把它写成一句话。</p>
+      </div>
+      <div class="exercise">
+        <button type="button" id="answer-button" class="answer-button" aria-expanded="false" aria-controls="sample-answer">展开示例答案</button>
+        <p id="sample-answer" class="exercise-answer body-copy" hidden>试运行期间，在连续 20 个工作日内，销售日报至少有 19 天在北京时间 9:00 前生成并可供业务人员查看。</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="progress" aria-hidden="true"><div id="progress-fill"></div></div>
+  <footer class="toolbar">
+    <span class="hint">方向键翻页 · N 切换讲者备注</span>
+    <div class="navigation">
+      <button type="button" class="nav-button" id="previous" aria-label="上一页">←</button>
+      <span class="slide-count" id="page-count" role="status" aria-live="polite">1 / 6</span>
+      <button type="button" class="nav-button" id="next" aria-label="下一页">→</button>
+    </div>
+  </footer>
+  <aside class="notes" id="speaker-notes" aria-labelledby="notes-heading" hidden>
+    <h2 id="notes-heading">讲者备注</h2>
+    <p id="notes-text" class="small"></p>
+  </aside>
+</main>
+<script>
+  const slides = [...document.querySelectorAll(".slide")];
+  const previous = document.getElementById("previous");
+  const next = document.getElementById("next");
+  const pageCount = document.getElementById("page-count");
+  const progress = document.getElementById("progress-fill");
+  const notesToggle = document.getElementById("notes-toggle");
+  const notesPanel = document.getElementById("speaker-notes");
+  const notesText = document.getElementById("notes-text");
+  const fullscreen = document.getElementById("fullscreen");
+  const speakerNotes = [
+    "念完业务原话，停几秒。请大家想一想：客户说慢，至少需要哪两条信息才能核对？",
+    "请学员先报自己的问题。按他们的回答依次展开卡片，问一句：如果只能先问一个，你会问哪个？",
+    "用跨日的例子确认大家是否理解工作小时。接着读普通和加急的目标，强调这些数字来自案例假设。",
+    "先用普通申请的默认 4 小时，再切到加急。把加急时限从 2 拖到 3 小时，问达到 90% 后是否就可以改承诺。请学员用业务约束解释。",
+    "点出两种判断：一笔是否超时，和整批是否达到 90%。最后追问，如果有多笔一直未办结，业务会在哪里看到？",
+    "给学员一分钟写答案。展开参考后，让大家互相检查有没有写清楚：谁能看到报表、几点算晚、测几天。"
+  ];
+  let currentSlide = 0;
+
+  function showSlide(index, moveFocus = false) {
+    const target = Math.max(0, Math.min(index, slides.length - 1));
+    if (moveFocus && target === currentSlide) return;
+    slides[currentSlide].hidden = true;
+    currentSlide = target;
+    slides[target].hidden = false;
+    previous.disabled = target === 0;
+    next.disabled = target === slides.length - 1;
+    pageCount.textContent = (target + 1) + " / " + slides.length;
+    progress.style.width = ((target + 1) / slides.length * 100) + "%";
+    notesText.textContent = speakerNotes[target];
+    if (moveFocus) {
+      slides[target].focus({preventScroll: true});
+      window.scrollTo(0, 0);
+    }
+  }
+
+  function togglePanel(button) {
+    const panel = document.getElementById(button.getAttribute("aria-controls"));
+    panel.hidden = !panel.hidden;
+    button.setAttribute("aria-expanded", String(!panel.hidden));
+    return panel.hidden;
+  }
+
+  previous.addEventListener("click", () => showSlide(currentSlide - 1, true));
+  next.addEventListener("click", () => showSlide(currentSlide + 1, true));
+  notesToggle.addEventListener("click", () => togglePanel(notesToggle));
+  document.querySelectorAll(".reveal").forEach(button => {
+    button.addEventListener("click", () => togglePanel(button));
+  });
+  const answerButton = document.getElementById("answer-button");
+  answerButton.addEventListener("click", () => {
+    answerButton.textContent = togglePanel(answerButton) ? "展开示例答案" : "收起示例答案";
+  });
+
+  fullscreen.hidden = !document.fullscreenEnabled;
+  fullscreen.addEventListener("click", async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch {
+      fullscreen.textContent = "全屏不可用";
+    }
+  });
+  document.addEventListener("fullscreenchange", () => {
+    fullscreen.textContent = document.fullscreenElement ? "退出全屏" : "全屏";
+  });
+
+  const pageDirections = {ArrowRight: 1, PageDown: 1, ArrowLeft: -1, PageUp: -1};
+  document.addEventListener("keydown", event => {
+    if (event.altKey || event.metaKey || event.ctrlKey || event.isComposing) return;
+    if (event.target.closest("input, select, textarea, [contenteditable]")) return;
+
+    if (event.key.toLowerCase() === "n" && !event.repeat) {
+      togglePanel(notesToggle);
+      return;
+    }
+    if (event.key === "Escape" && !notesPanel.hidden) {
+      togglePanel(notesToggle);
+      return;
+    }
+    if (Object.hasOwn(pageDirections, event.key)) {
+      event.preventDefault();
+      showSlide(currentSlide + pageDirections[event.key], true);
+    }
+  });
+
+  const cohorts = {
+    standard: {
+      label: "普通申请", threshold: 4,
+      durations: [1.5, 2, 2, 2.5, 2.5, 3, 3, 3, 3, 3.25, 3.5, 3.5, 3.5, 3.75, 4, 4, 4, 4, 4.5, 5]
+    },
+    urgent: {
+      label: "加急申请", threshold: 2,
+      durations: [1, 1, 1.25, 1.25, 1.5, 1.5, 1.5, 1.75, 1.75, 1.75, 2, 2, 2, 2, 2, 2.25, 2.5, 3, 3.5, 4]
+    }
+  };
+  const radios = [...document.querySelectorAll("input[name=cohort]")];
+  const threshold = document.getElementById("threshold");
+  const thresholdValue = document.getElementById("threshold-value");
+  const percent = document.getElementById("percent");
+  const status = document.getElementById("status");
+  const count = document.getElementById("count");
+  const criterion = document.getElementById("criterion");
+  const dots = document.getElementById("dots");
+  const dotElements = cohorts.standard.durations.map(() => {
+    const dot = document.createElement("span");
+    dot.className = "dot";
+    dots.append(dot);
+    return dot;
+  });
+
+  function updateLab() {
+    const cohort = cohorts[radios.find(radio => radio.checked).value];
+    const hours = threshold.valueAsNumber;
+    const passed = cohort.durations.filter(duration => duration <= hours).length;
+    const share = passed / cohort.durations.length;
+    thresholdValue.value = hours + " 工作小时";
+    threshold.setAttribute("aria-valuetext", hours + " 个工作小时");
+    percent.textContent = (share * 100).toFixed(0) + "%";
+    status.textContent = share >= 0.9 ? "通过" : "未通过";
+    status.classList.toggle("failed", share < 0.9);
+    count.textContent = passed + " / " + cohort.durations.length + " 笔在时限内";
+    criterion.textContent = "试运行 30 日内办结的" + cohort.label +
+      "中，至少 90% 从提交到审批完成的耗时不超过 " + hours + " 个工作小时。";
+    dotElements.forEach((dot, index) => {
+      dot.classList.toggle("passed", cohort.durations[index] <= hours);
+    });
+  }
+
+  radios.forEach(radio => {
+    radio.addEventListener("change", () => {
+      threshold.value = cohorts[radio.value].threshold;
+      updateLab();
+    });
+  });
+  threshold.addEventListener("input", updateLab);
+  showSlide(0);
+  updateLab();
+</script>
+</body>
+</html>
